@@ -1,0 +1,23 @@
+# 报送后台：官方 Playwright 镜像已内置 Chromium 所需系统库
+FROM mcr.microsoft.com/playwright/python:v1.55.0-noble
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    REPORTER_DB=/data/reporter.db \
+    UPLOAD_DIR=/data/uploads \
+    SCREENSHOT_DIR=/data/screenshots \
+    LEGACY_URL=http://legacy:8000 \
+    HEADLESS=1 \
+    SLOW_MO_MS=150 \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
+WORKDIR /app
+COPY reporter/requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && python -m playwright install chromium
+
+COPY reporter/ /app/reporter/
+RUN mkdir -p /data
+
+EXPOSE 8000
+CMD ["uvicorn", "reporter.app:app", "--host", "0.0.0.0", "--port", "8000"]

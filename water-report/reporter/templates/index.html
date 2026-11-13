@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block body %}
+<h2>上传 CSV 新建报送批次</h2>
+<p class="muted">CSV 必须包含三列表头：<code>样本号</code>、<code>项目</code>、<code>结果</code>；
+结果为非负十进制数；（样本号, 项目）为业务键，文件内不得重复。</p>
+<form method="post" action="/batches" enctype="multipart/form-data">
+  <input type="file" name="file" accept=".csv" required>
+  <button type="submit">上传并建批</button>
+</form>
+
+<h2 style="margin-top:34px">报送批次</h2>
+{% if busy %}
+<div class="flash info">当前有一个浏览器报送任务正在运行（每批同一时刻只允许一份）。</div>
+{% endif %}
+{% if not batches %}
+<p class="muted">还没有批次。</p>
+{% else %}
+<table>
+  <thead><tr><th>批次</th><th>文件</th><th>状态</th><th>行数/状态分布</th><th>更新时间</th><th></th></tr></thead>
+  <tbody>
+  {% for b in batches %}
+  <tr>
+    <td>#{{ b.id }}</td>
+    <td>{{ b.filename }}</td>
+    <td><span class="pill batch-{{ b.status }}">{{ b.status }}</span>
+        {% if b.busy %}<div class="muted">运行中…</div>{% endif %}</td>
+    <td class="counts">
+      共 {{ b.total }} 行
+      {% for st, n in b.counts.items() if n %}
+        <span><span class="pill {{ st }}">{{ status_labels[st] if st in status_labels else st }}</span> {{ n }}</span>
+      {% endfor %}
+    </td>
+    <td class="muted">{{ b.updated_at }}</td>
+    <td><a href="/batches/{{ b.id }}">打开</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+<p class="muted" style="margin-top:18px">
+旧报送站（演示环境，可切换"保存后断连"开关）：
+<a href="{{ legacy_url }}/" target="_blank">{{ legacy_url }}/</a>
+</p>
+{% endblock %}

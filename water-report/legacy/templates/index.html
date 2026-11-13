@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block body %}
+<h2>站点首页</h2>
+<p>本系统只提供网页表单，无对外数据接口。当前库内记录数：<strong id="record-total">{{ total }}</strong></p>
+<p class="muted">演练用断连开关：
+<b>仅保存后断连</b>时，保存会先落库再返回 500，模拟保存成功但回执丢失；
+<b>全站断连</b>时连查询也会失败，用于验证"查询失败不能当成不存在"。</p>
+<form method="post" action="/__admin/toggle-disconnect" style="display:inline">
+  <input type="hidden" name="mode" value="off">
+  <button type="submit" {% if not disconnect %}disabled{% endif %}>全部恢复正常</button>
+</form>
+<form method="post" action="/__admin/toggle-disconnect" style="display:inline">
+  <input type="hidden" name="mode" value="save">
+  <button type="submit" class="warn" {% if disconnect_save %}disabled{% endif %}>开启：仅保存后断连</button>
+</form>
+<form method="post" action="/__admin/toggle-disconnect" style="display:inline">
+  <input type="hidden" name="mode" value="all">
+  <button type="submit" class="warn" {% if disconnect_all %}disabled{% endif %}>开启：全站断连</button>
+</form>
+{% if disconnect %}
+<div class="flash err">当前模拟状态：
+  {% if disconnect_all %}全站断连（查询/保存均失败，保存仍会先落库）
+  {% else %}仅保存后断连（保存先落库再丢回执，查询正常）{% endif %}
+</div>
+{% endif %}
+{% endblock %}

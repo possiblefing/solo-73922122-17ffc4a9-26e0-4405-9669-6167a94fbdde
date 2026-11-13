@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}批次 #{{ b.id }}{% endblock %}
+{% block body %}
+<h2>批次 #{{ b.id }} — {{ b.filename }}
+  <span id="batch-status" class="pill batch-{{ b.status }}">{{ b.status }}</span>
+</h2>
+<p class="muted">{{ b.note }}</p>
+
+<div class="counts" id="counts">
+  {% for st, n in counts.items() %}
+    <span data-st="{{ st }}"><span class="pill {{ st }}">{{ status_labels[st] }}</span>
+      <b class="n">{{ n }}</b></span>
+  {% endfor %}
+</div>
+
+<div style="margin:16px 0" id="controls">
+  <form method="post" action="/batches/{{ b.id }}/start" style="display:inline">
+    <input type="hidden" name="resume" value="0">
+    <button type="submit" id="btn-start"
+      {% if busy or b.status == 'DONE' %}disabled{% endif %}>开始报送</button>
+  </form>
+  <form method="post" action="/batches/{{ b.id }}/start" style="display:inline">
+    <input type="hidden" name="resume" value="1">
+    <button type="submit" class="gray" id="btn-resume"
+      {% if busy %}disabled{% endif %}>续跑（先核实待核实行）</button>
+  </form>
+  <form method="post" action="/batches/{{ b.id }}/stop" style="display:inline">
+    <button type="submit" class="red" id="btn-stop" {% if not busy %}disabled{% endif %}>
+      请求停止（行边界生效）</button>
+  </form>
+  <a class="muted" href="/">← 返回批次列表</a>
+</div>
+
+{% if counts.CONFLICT %}
+<div class="flash err">存在异值冲突，批次已停止。请核对下列行的本地值与远端值，
+确认正确数据后到旧站人工处理，再用"续跑"继续其余行。</div>
+{% endif %}
+
+<table id="rows-table">
+  <thead><tr>
+    <th>#</th><th>样本号</th><th>项目</th><th>本地结果</th>
+    <th>状态</th><th>远端记录编号</th><th>说明 / 双方值</th><th>页面截图</th><th>日志</th>
+  </tr></thead>
+  <tbody id="rows-body">
+  {% for r in rows %}
+  <tr id="row-{{ r.id }}" data-status="{{ r.status }}">
+    <td>{{ r.seq }}</td>
+    <td>{{ r.sample_no }}</td>
+    <td>{{ r.project }}</td>
+    <td>{{ r.result }}</td>
+    <td><span class="pill {{ r.status }} status-pill">{{ r.status_label }}</span>
+        <div class="muted">尝试 {{ r.attempts }} 次</div>
+        {% if r.status == 'CONFLICT' %}
+        <form method="post"
+              action="/batches/{{ b.id }}/rows/{{ r.id }}/recheck"
+              style="margin-top:6px">
+          <button type="submit" class="gray" style="padding:4px 10px;font-size:12px"
+            {% if busy %}disabled{% endif %}>人工处理完，重置待核实</button>
+        </form>
+        {% endif %}
+    </td>
+    <td class="remote-id-cell">{{ r.remote_id or '—' }}</td>
+    <td class="msg-cell" style="max-width:340px">{{ r.message or '' }}</td>
+    <td class="shot-cell">
+      {% if r.screenshot %}
+        <a href="/screenshots/{{ r.screenshot }}" target="_blank">
+          <img class="shot" src="/screenshots/{{ r.screenshot }}"></a>
+      {% else %}—{% endif %}
+    </td>
+    <td><a href="/batches/{{ b.id }}/rows/{{ r.id }}/events">事件</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<script>
+const BATCH_ID = {{ b.id }};
+const LABELS = {{ status_labels | tojson }};
+async function refresh() {
+  const resp = await fetch(`/api/batches/${BATCH_ID}`);
+  if (!resp.ok) return;
+  const data = await resp.json();
+  document.getElementById('batch-status').textContent = data.batch.status;
+  document.getElementById('batch-status').className =
+    'pill batch-' + data.batch.status;
+  const counts = data.counts;
+  document.querySelectorAll('#counts span').forEach(el => {
+    el.querySelector('.n').textContent = counts[el.dataset.st] || 0;
+  });
+  const busy = data.busy;
+  document.getElementById('btn-start').disabled =
+    busy || data.batch.status === 'DONE';
+  document.getElementById('btn-resume').disabled = busy;
+  document.getElementById('btn-stop').disabled = !busy;
+
+  data.rows.forEach(r => {
+    const tr = document.getElementById('row-' + r.id);
+    if (!tr) return;
+    tr.dataset.status = r.status;
+    tr.classList.toggle('row-active',
+      busy && data.current_seq != null && r.seq === data.current_seq);
+    tr.querySelector('.status-pill').textContent =
+      LABELS[r.status] || r.status;
+    tr.querySelector('.status-pill').className = 'pill ' + r.status;
+    tr.querySelector('.remote-id-cell').textContent = r.remote_id || '—';
+    tr.querySelector('.msg-cell').textContent = r.message || '';
+    const cell = tr.querySelector('.shot-cell');
+    cell.innerHTML = r.screenshot
+      ? `<a href="/screenshots/${r.screenshot}" target="_blank">
+         <img class="shot" src="/screenshots/${r.screenshot}"></a>` : '—';
+    tr.querySelectorAll('td')[4].querySelector('.muted').textContent =
+      '尝试 ' + r.attempts + ' 次';
+  });
+}
+setInterval(refresh, 2000);
+</script>
+{% endblock %}

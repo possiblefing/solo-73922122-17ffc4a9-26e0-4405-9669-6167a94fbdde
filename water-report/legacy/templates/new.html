@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block body %}
+<h2>录入新结果</h2>
+{% if errors %}
+<div class="flash err" id="form-errors">
+  {% for e in errors %}<div>{{ e }}</div>{% endfor %}
+</div>
+{% endif %}
+<form id="entry-form" method="post" action="/save">
+  <label>样本号 <input id="f-sample-no" name="sample_no" value="{{ sample_no }}" required></label><br>
+  <label>项目&nbsp;&nbsp;&nbsp; <input id="f-project" name="project" value="{{ project }}" required></label><br>
+  <label>结果（非负十进制）<input id="f-result" name="result" value="{{ result }}" inputmode="decimal" required></label><br>
+  <button type="submit" id="entry-submit">保存</button>
+</form>
+{% endblock %}

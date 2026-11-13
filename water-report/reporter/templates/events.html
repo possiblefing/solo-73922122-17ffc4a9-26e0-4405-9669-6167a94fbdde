@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block body %}
+<h2>行事件日志 — 批次 #{{ b.id }} 第 {{ row.seq }} 行</h2>
+<table>
+  <tr><th>业务键</th><td>{{ row.sample_no }} / {{ row.project }}</td></tr>
+  <tr><th>本地结果</th><td>{{ row.result }}</td></tr>
+  <tr><th>当前状态</th><td><span class="pill {{ row.status }}">{{ status_label }}</span></td></tr>
+  <tr><th>远端记录编号</th><td>{{ row.remote_id or '—' }}</td></tr>
+</table>
+<table>
+  <thead><tr><th>时间</th><th>事件</th><th>详情</th></tr></thead>
+  <tbody>
+  {% for e in events %}
+  <tr><td class="muted">{{ e.created_at }}</td><td>{{ e.event }}</td><td>{{ e.detail }}</td></tr>
+  {% else %}
+  <tr><td colspan="3" class="muted">暂无事件</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<p style="margin-top:16px"><a href="/batches/{{ b.id }}">← 返回批次</a></p>
+{% endblock %}

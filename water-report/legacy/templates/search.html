@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block body %}
+<h2>业务键查询</h2>
+<p class="muted">业务键 = 样本号 + 项目。系统允许同一业务键存在多条记录。</p>
+<form id="search-form" method="post" action="/search">
+  <label>样本号 <input id="q-sample-no" name="sample_no" value="{{ sample_no }}" required></label><br>
+  <label>项目&nbsp;&nbsp;&nbsp; <input id="q-project" name="project" value="{{ project }}" required></label><br>
+  <button type="submit" id="search-submit">查询</button>
+</form>
+
+{% if rows is not none %}
+  <h3>查询结果</h3>
+  {% if rows %}
+  <table id="result-table">
+    <thead><tr><th>记录编号</th><th>样本号</th><th>项目</th><th>结果</th><th>录入时间</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr class="result-row">
+        <td class="remote-id">{{ r.id }}</td>
+        <td class="remote-sample-no">{{ r.sample_no }}</td>
+        <td class="remote-project">{{ r.project }}</td>
+        <td class="remote-result">{{ r.result }}</td>
+        <td>{{ r.created_at }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p id="no-result" class="flash ok">未查询到该业务键的记录。</p>
+  {% endif %}
+{% endif %}
+{% endblock %}

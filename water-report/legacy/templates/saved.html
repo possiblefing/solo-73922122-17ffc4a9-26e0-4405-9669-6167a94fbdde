@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block body %}
+<h2>保存成功</h2>
+<div class="flash ok" id="saved-notice">记录已入库，远端记录编号：<strong id="saved-record-id">{{ row.id }}</strong></div>
+<table>
+  <tr><th>记录编号</th><td class="remote-id">{{ row.id }}</td></tr>
+  <tr><th>样本号</th><td>{{ row.sample_no }}</td></tr>
+  <tr><th>项目</th><td>{{ row.project }}</td></tr>
+  <tr><th>结果</th><td>{{ row.result }}</td></tr>
+  <tr><th>录入时间</th><td>{{ row.created_at }}</td></tr>
+</table>
+<p><a href="/new">继续录入</a></p>
+{% endblock %}

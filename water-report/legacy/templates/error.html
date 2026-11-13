@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block body %}
+<h2>系统错误</h2>
+<div class="flash err" id="error-page">
+  <strong>500 - 网络连接中断</strong>
+  <p>{{ message }}</p>
+</div>
+<p class="muted">请检查网络后重试；本次操作是否已在服务器生效需要重新查询核实。</p>
+{% endblock %}

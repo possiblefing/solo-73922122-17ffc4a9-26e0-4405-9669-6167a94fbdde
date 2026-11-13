@@ -1,0 +1,49 @@
+# 可实际启动的演示环境：
+#   legacy   —— 只有网页表单的旧报送站（SQLite 持久化，允许重复键，带断连开关）
+#   reporter —— 报送控制台（FastAPI + SQLite + 真实 Chromium/Playwright）
+# 两个服务的数据各自落在命名卷，容器重建不丢数据。
+services:
+  legacy:
+    build:
+      context: .
+      dockerfile: Dockerfile.legacy
+    container_name: legacy-water-station
+    environment:
+      LEGACY_DB: /data/legacy.db
+    ports:
+      - "8001:8000"          # 浏览器直接访问旧站：http://localhost:8001
+    volumes:
+      - legacy-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  reporter:
+    build:
+      context: .
+      dockerfile: Dockerfile.reporter
+    container_name: water-reporter
+    depends_on:
+      legacy:
+        condition: service_healthy
+    environment:
+      REPORTER_DB: /data/reporter.db
+      UPLOAD_DIR: /data/uploads
+      SCREENSHOT_DIR: /data/screenshots
+      LEGACY_URL: http://legacy:8000
+      HEADLESS: "1"
+      SLOW_MO_MS: "150"      # 放慢动作便于人工观察浏览器填表
+    ports:
+      - "8000:8000"          # 报送控制台：http://localhost:8000
+    volumes:
+      - reporter-data:/data
+      # 把示例 CSV 挂进去，方便容器内手工测试
+      - ./data:/samples:ro
+    restart: unless-stopped
+
+volumes:
+  legacy-data:
+  reporter-data:

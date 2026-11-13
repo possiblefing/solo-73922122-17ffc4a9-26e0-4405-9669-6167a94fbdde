@@ -1,0 +1,16 @@
+# 旧报送站：极简 Python 镜像，仅 FastAPI + uvicorn，数据落在 /data 卷
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    LEGACY_DB=/data/legacy.db
+
+WORKDIR /app
+COPY legacy/requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY legacy/ /app/legacy/
+RUN mkdir -p /data
+
+EXPOSE 8000
+CMD ["uvicorn", "legacy.app:app", "--host", "0.0.0.0", "--port", "8000"]
